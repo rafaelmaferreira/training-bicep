@@ -26,23 +26,22 @@ param environmentName string = 'Development'
 param auditStorageAccountSkuName string = 'Standard_LRS'
 
 var sqlServerName = 'teddy${location}${uniqueString(resourceGroup().id)}'
-var sqlDataBaseName = 'TeddyBear'
-
+var sqlDatabaseName = 'TeddyBear'
 var auditingEnabled = environmentName == 'Production'
-var auditStorageAccountName = take('beardutit${location}${uniqueString(resourceGroup().id)}', 24)
+var auditStorageAccountName = take('bearaudit${location}${uniqueString(resourceGroup().id)}', 24)
 
-resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
+resource sqlServer 'Microsoft.Sql/servers@2024-05-01-preview' = {
   name: sqlServerName
   location: location
   properties: {
     administratorLogin: sqlServerAdministratorLogin
-    administratorLoginPassword: sqlServerAdministratorLoginPassword 
+    administratorLoginPassword: sqlServerAdministratorLoginPassword
   }
 }
 
-resource sqlDatabase 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
+resource sqlDatabase 'Microsoft.Sql/servers/databases@2024-05-01-preview' = {
   parent: sqlServer
-  name: sqlDataBaseName
+  name: sqlDatabaseName
   location: location
   sku: sqlDatabaseSku
 }
@@ -53,10 +52,10 @@ resource auditStorageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = if
   sku: {
     name: auditStorageAccountSkuName
   }
-  kind: 'StorageV2'
+  kind: 'StorageV2'  
 }
 
-resource sqlServerAudit 'Microsoft.Sql/servers/auditingSettings@2023-08-01-preview' = if (auditingEnabled) {
+resource sqlServerAudit 'Microsoft.Sql/servers/auditingSettings@2024-05-01-preview' = if (auditingEnabled) {
   parent: sqlServer
   name: 'default'
   properties: {
@@ -65,3 +64,7 @@ resource sqlServerAudit 'Microsoft.Sql/servers/auditingSettings@2023-08-01-previ
     storageAccountAccessKey: environmentName == 'Production' ? listKeys(auditStorageAccount.id, auditStorageAccount.apiVersion).keys[0].value : ''
   }
 }
+
+output serverName string = sqlServer.name
+output location string = location
+output serverFullyQualifiedDomainName string = sqlServer.properties.fullyQualifiedDomainName
